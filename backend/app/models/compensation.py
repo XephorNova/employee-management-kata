@@ -1,5 +1,6 @@
 from __future__ import annotations
-from datetime import date, datetime
+from datetime import date, datetime, timezone
+from decimal import Decimal
 from typing import Optional
 from sqlalchemy import String, Date, DateTime, ForeignKey, Enum, Numeric, Boolean, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -42,11 +43,11 @@ class SalaryRecord(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     employee_id: Mapped[int] = mapped_column(ForeignKey("employees.id"))
-    base_salary: Mapped[float] = mapped_column(Numeric(12, 2))
+    base_salary: Mapped[Decimal] = mapped_column(Numeric(12, 2))
     currency: Mapped[str] = mapped_column(String(3))
     effective_date: Mapped[date] = mapped_column(Date)
     pay_frequency: Mapped[PayFrequency] = mapped_column(Enum(PayFrequency), default=PayFrequency.monthly)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc))
 
     employee: Mapped["Employee"] = relationship(back_populates="salary_records")
 
@@ -56,7 +57,7 @@ class Bonus(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     employee_id: Mapped[int] = mapped_column(ForeignKey("employees.id"))
-    amount: Mapped[float] = mapped_column(Numeric(12, 2))
+    amount: Mapped[Decimal] = mapped_column(Numeric(12, 2))
     currency: Mapped[str] = mapped_column(String(3))
     bonus_type: Mapped[BonusType] = mapped_column(Enum(BonusType))
     awarded_date: Mapped[date] = mapped_column(Date)
@@ -86,7 +87,7 @@ class Allowance(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     employee_id: Mapped[int] = mapped_column(ForeignKey("employees.id"))
     allowance_type: Mapped[AllowanceType] = mapped_column(Enum(AllowanceType))
-    amount: Mapped[float] = mapped_column(Numeric(12, 2))
+    amount: Mapped[Decimal] = mapped_column(Numeric(12, 2))
     currency: Mapped[str] = mapped_column(String(3))
     frequency: Mapped[PayFrequency] = mapped_column(Enum(PayFrequency), default=PayFrequency.monthly)
 
@@ -99,7 +100,7 @@ class Deduction(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     employee_id: Mapped[int] = mapped_column(ForeignKey("employees.id"))
     deduction_type: Mapped[DeductionType] = mapped_column(Enum(DeductionType))
-    amount: Mapped[float] = mapped_column(Numeric(12, 2))
+    amount: Mapped[Decimal] = mapped_column(Numeric(12, 2))
     is_percentage: Mapped[bool] = mapped_column(Boolean, default=False)
     currency: Mapped[Optional[str]] = mapped_column(String(3), nullable=True)
     frequency: Mapped[PayFrequency] = mapped_column(Enum(PayFrequency), default=PayFrequency.monthly)
