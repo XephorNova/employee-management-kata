@@ -22,5 +22,5 @@ def test_create_and_decode_access_token():
 def test_expired_token_raises():
     data = {"sub": "user@example.com"}
     token = create_access_token(data, expires_delta=timedelta(seconds=-1))
-    with pytest.raises(Exception):
+    with pytest.raises(ValueError):
         decode_token(token)
