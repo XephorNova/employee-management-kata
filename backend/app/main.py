@@ -9,6 +9,7 @@ from app.api.salary_slips import router as salary_slips_router
 from app.api.analytics import router as analytics_router
 from app.api.meta import router as meta_router
 from app.api.admin import router as admin_router
+from app.api.ai import router as ai_router
 
 app = FastAPI(title="ACME HR Salary Management API", version="1.0.0")
 
@@ -29,6 +30,7 @@ app.include_router(salary_slips_router)
 app.include_router(analytics_router)
 app.include_router(meta_router)
 app.include_router(admin_router)
+app.include_router(ai_router)
 
 
 @app.get("/health")
