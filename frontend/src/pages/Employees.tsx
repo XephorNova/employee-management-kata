@@ -33,7 +33,7 @@ export default function Employees() {
           onChange={(e) => { setSearch(e.target.value); setPage(1); }}
           className="max-w-xs"
         />
-        <Select onValueChange={(v) => { setDepartment(v === "all" ? undefined : v); setPage(1); }}>
+        <Select onValueChange={(v) => { setDepartment(!v || v === "all" ? undefined : (v as string)); setPage(1); }}>
           <SelectTrigger className="w-44">
             <SelectValue placeholder="Department" />
           </SelectTrigger>
@@ -42,7 +42,7 @@ export default function Employees() {
             {departments?.map((d: string) => <SelectItem key={d} value={d}>{d}</SelectItem>)}
           </SelectContent>
         </Select>
-        <Select onValueChange={(v) => { setCountry(v === "all" ? undefined : v); setPage(1); }}>
+        <Select onValueChange={(v) => { setCountry(!v || v === "all" ? undefined : (v as string)); setPage(1); }}>
           <SelectTrigger className="w-36">
             <SelectValue placeholder="Country" />
           </SelectTrigger>

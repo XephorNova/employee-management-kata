@@ -42,7 +42,7 @@ export default function Users() {
             <div><Label>Password</Label><Input type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} /></div>
             <div>
               <Label>Role</Label>
-              <Select value={form.role} onValueChange={(v) => setForm({ ...form, role: v })}>
+              <Select value={form.role} onValueChange={(v) => setForm({ ...form, role: v ?? form.role })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>{ROLES.map((r) => <SelectItem key={r} value={r}>{r}</SelectItem>)}</SelectContent>
               </Select>

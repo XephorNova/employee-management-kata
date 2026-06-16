@@ -122,7 +122,7 @@ export default function Insights() {
             <Card className={msg.role === "user" ? "inline-block bg-indigo-600 text-white" : ""}>
               <CardContent className="p-3 text-sm whitespace-pre-wrap">
                 {msg.content}
-                {msg.role === "assistant" && msg.data && msg.chart_type !== "none" && (
+                {msg.role === "assistant" && !!msg.data && msg.chart_type !== "none" && (
                   <ChartBlock data={msg.data} chartType={msg.chart_type!} />
                 )}
                 {msg.role === "assistant" && msg.tool_used && (
