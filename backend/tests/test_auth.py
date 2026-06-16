@@ -88,3 +88,20 @@ async def test_me_endpoint(auth_client):
 async def test_me_unauthenticated(auth_client):
     resp = await auth_client.get("/auth/me")
     assert resp.status_code == 403
+
+
+@pytest.mark.asyncio
+async def test_refresh_with_valid_refresh_token(auth_client):
+    login = await auth_client.post("/auth/login", json={"email": "admin@acme.com", "password": "password123"})
+    refresh_token = login.json()["refresh_token"]
+    resp = await auth_client.post("/auth/refresh", json={"refresh_token": refresh_token})
+    assert resp.status_code == 200
+    assert "access_token" in resp.json()
+
+
+@pytest.mark.asyncio
+async def test_refresh_with_access_token_rejected(auth_client):
+    login = await auth_client.post("/auth/login", json={"email": "admin@acme.com", "password": "password123"})
+    access_token = login.json()["access_token"]
+    resp = await auth_client.post("/auth/refresh", json={"refresh_token": access_token})
+    assert resp.status_code == 401

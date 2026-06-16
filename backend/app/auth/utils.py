@@ -15,15 +15,16 @@ def verify_password(plain: str, hashed: str) -> bool:
     return pwd_context.verify(plain, hashed)
 
 
-def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
+def create_access_token(data: dict, expires_delta: Optional[timedelta] = None, token_type: str = "access") -> str:
     to_encode = data.copy()
     expire = datetime.now(timezone.utc) + (expires_delta or timedelta(minutes=settings.access_token_expire_minutes))
     to_encode["exp"] = expire
+    to_encode["type"] = token_type
     return jwt.encode(to_encode, settings.secret_key, algorithm=settings.algorithm)
 
 
 def create_refresh_token(data: dict) -> str:
-    return create_access_token(data, expires_delta=timedelta(days=settings.refresh_token_expire_days))
+    return create_access_token(data, expires_delta=timedelta(days=settings.refresh_token_expire_days), token_type="refresh")
 
 
 def decode_token(token: str) -> dict:

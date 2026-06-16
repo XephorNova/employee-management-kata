@@ -26,6 +26,8 @@ async def refresh(body: TokenRefreshRequest):
         payload = decode_token(body.refresh_token)
     except ValueError:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid refresh token")
+    if payload.get("type") != "refresh":
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid refresh token")
     return TokenRefreshResponse(access_token=create_access_token({"sub": payload["sub"], "role": payload["role"]}))
 
 
