@@ -6,7 +6,7 @@ from app.core.database import get_db
 from app.auth.dependencies import hr_or_above
 from app.models.user import User
 from app.models.tax import TaxRule, TaxBracket
-from app.schemas.tax import TaxRuleCreate, TaxRuleUpdate, TaxRuleOut
+from app.schemas.tax import TaxBracketCreate, TaxBracketOut, TaxRuleCreate, TaxRuleUpdate, TaxRuleOut
 
 router = APIRouter(prefix="/api/tax-rules", tags=["tax-rules"])
 
@@ -60,3 +60,23 @@ async def update_tax_rule(rule_id: int, data: TaxRuleUpdate, db: AsyncSession = 
         setattr(rule, field, value)
     await db.commit()
     return await _load_rule(rule_id, db)
+
+
+@router.post("/{rule_id}/brackets", response_model=TaxBracketOut, status_code=status.HTTP_201_CREATED)
+async def add_bracket(rule_id: int, data: TaxBracketCreate, db: AsyncSession = Depends(get_db), _: User = Depends(hr_or_above)):
+    await _load_rule(rule_id, db)
+    bracket = TaxBracket(tax_rule_id=rule_id, **data.model_dump())
+    db.add(bracket)
+    await db.commit()
+    await db.refresh(bracket)
+    return bracket
+
+
+@router.delete("/{rule_id}/brackets/{bracket_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_bracket(rule_id: int, bracket_id: int, db: AsyncSession = Depends(get_db), _: User = Depends(hr_or_above)):
+    r = await db.execute(select(TaxBracket).where(TaxBracket.id == bracket_id, TaxBracket.tax_rule_id == rule_id))
+    bracket = r.scalar_one_or_none()
+    if not bracket:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Bracket not found")
+    await db.delete(bracket)
+    await db.commit()

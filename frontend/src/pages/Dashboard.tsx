@@ -1,6 +1,11 @@
-import { useQuery } from "@tanstack/react-query";
-import { getAnalyticsSummary, getAnalyticsByDepartment, getSalaryBands } from "@/lib/api";
+import { useState } from "react";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { getAnalyticsSummary, getAnalyticsByDepartment, getSalaryBands, bulkGenerateSalarySlips } from "@/lib/api";
+import { useAuth } from "@/context/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from "recharts";
 
 const COLORS = ["#6366f1", "#22c55e", "#f59e0b", "#ef4444", "#8b5cf6", "#06b6d4", "#ec4899", "#14b8a6"];
@@ -22,7 +27,86 @@ function fmt(n: number) {
   return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(n);
 }
 
+interface BulkResult {
+  generated: number;
+  errors: { employee_id: number; error: string }[];
+  total: number;
+}
+
+function BulkGenerateCard() {
+  const now = new Date();
+  // Pre-fill next month
+  const nextMonth = now.getMonth() === 11 ? 1 : now.getMonth() + 2;
+  const nextYear = now.getMonth() === 11 ? now.getFullYear() + 1 : now.getFullYear();
+
+  const [month, setMonth] = useState(nextMonth);
+  const [year, setYear] = useState(nextYear);
+  const [result, setResult] = useState<BulkResult | null>(null);
+
+  const bulkMutation = useMutation({
+    mutationFn: () => bulkGenerateSalarySlips(month, year),
+    onSuccess: (data: BulkResult) => setResult(data),
+  });
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-base">Generate Upcoming Salary Slips</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="flex items-end gap-3">
+          <div>
+            <Label>Month</Label>
+            <Input
+              type="number"
+              min={1}
+              max={12}
+              value={month}
+              onChange={(e) => setMonth(Number(e.target.value))}
+              className="w-20"
+            />
+          </div>
+          <div>
+            <Label>Year</Label>
+            <Input
+              type="number"
+              value={year}
+              onChange={(e) => setYear(Number(e.target.value))}
+              className="w-28"
+            />
+          </div>
+          <Button onClick={() => { setResult(null); bulkMutation.mutate(); }} disabled={bulkMutation.isPending}>
+            {bulkMutation.isPending ? "Generating…" : "Generate for all active employees"}
+          </Button>
+        </div>
+
+        {bulkMutation.isError && (
+          <p className="text-red-500 text-sm">Failed to generate salary slips. Check permissions or try again.</p>
+        )}
+
+        {result && (
+          <div className="text-sm space-y-1">
+            <p className="text-green-600 font-medium">Generated {result.generated} slip{result.generated !== 1 ? "s" : ""} out of {result.total} active employees.</p>
+            {result.errors.length > 0 && (
+              <details>
+                <summary className="text-red-500 cursor-pointer">{result.errors.length} error{result.errors.length !== 1 ? "s" : ""}</summary>
+                <ul className="mt-1 text-slate-600 space-y-1">
+                  {result.errors.map((e) => (
+                    <li key={e.employee_id}>Employee #{e.employee_id}: {e.error}</li>
+                  ))}
+                </ul>
+              </details>
+            )}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
 export default function Dashboard() {
+  const { user } = useAuth();
+
   const { data: stats, isLoading: statsLoading } = useQuery({
     queryKey: ["analytics", "summary"],
     queryFn: () => getAnalyticsSummary(),
@@ -93,6 +177,8 @@ export default function Dashboard() {
           </Card>
         )}
       </div>
+
+      {user?.role === "admin" && <BulkGenerateCard />}
     </div>
   );
 }

@@ -1,10 +1,27 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { listPFRules, createPFRule } from "@/lib/api";
+import { listPFRules, createPFRule, updatePFRule } from "@/lib/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+
+interface PFRule {
+  id: number;
+  country: string;
+  rule_name: string;
+  employee_contribution_pct: number;
+  employer_contribution_pct: number;
+  applicable_salary_cap: number | null;
+  effective_from_date: string;
+}
+
+interface EditForm {
+  rule_name: string;
+  employee_contribution_pct: number;
+  employer_contribution_pct: number;
+  applicable_salary_cap: string;
+}
 
 export default function PFRules() {
   const qc = useQueryClient();
@@ -15,10 +32,49 @@ export default function PFRules() {
     employer_contribution_pct: 0.06, applicable_salary_cap: "", effective_from_date: "",
   });
 
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editForm, setEditForm] = useState<EditForm>({
+    rule_name: "",
+    employee_contribution_pct: 0,
+    employer_contribution_pct: 0,
+    applicable_salary_cap: "",
+  });
+
   const createMutation = useMutation({
     mutationFn: () => createPFRule({ ...form, applicable_salary_cap: form.applicable_salary_cap ? Number(form.applicable_salary_cap) : null }),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["pf-rules"] }); setShowForm(false); },
   });
+
+  const updateMutation = useMutation({
+    mutationFn: ({ id, data }: { id: number; data: unknown }) => updatePFRule(id, data),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["pf-rules"] }); setEditingId(null); },
+  });
+
+  function startEdit(rule: PFRule) {
+    setEditingId(rule.id);
+    setEditForm({
+      rule_name: rule.rule_name,
+      employee_contribution_pct: rule.employee_contribution_pct,
+      employer_contribution_pct: rule.employer_contribution_pct,
+      applicable_salary_cap: rule.applicable_salary_cap != null ? String(rule.applicable_salary_cap) : "",
+    });
+  }
+
+  function cancelEdit() {
+    setEditingId(null);
+  }
+
+  function saveEdit(id: number) {
+    updateMutation.mutate({
+      id,
+      data: {
+        rule_name: editForm.rule_name,
+        employee_contribution_pct: editForm.employee_contribution_pct,
+        employer_contribution_pct: editForm.employer_contribution_pct,
+        applicable_salary_cap: editForm.applicable_salary_cap ? Number(editForm.applicable_salary_cap) : null,
+      },
+    });
+  }
 
   return (
     <div className="space-y-4 max-w-3xl">
@@ -50,13 +106,36 @@ export default function PFRules() {
 
       {isLoading ? <div className="text-slate-400">Loading…</div> : (
         <div className="space-y-3">
-          {rules?.map((rule: { id: number; country: string; rule_name: string; employee_contribution_pct: number; employer_contribution_pct: number }) => (
+          {rules?.map((rule: PFRule) => (
             <Card key={rule.id}>
               <CardContent className="p-4">
-                <p className="font-medium">{rule.rule_name}</p>
-                <p className="text-sm text-slate-500">
-                  {rule.country} · Employee {(rule.employee_contribution_pct * 100).toFixed(1)}% · Employer {(rule.employer_contribution_pct * 100).toFixed(1)}%
-                </p>
+                {editingId === rule.id ? (
+                  <div className="space-y-3">
+                    <div><Label>Rule Name</Label><Input value={editForm.rule_name} onChange={(e) => setEditForm({ ...editForm, rule_name: e.target.value })} /></div>
+                    <div className="grid grid-cols-3 gap-3">
+                      <div><Label>Employee %</Label><Input type="number" step="0.01" value={editForm.employee_contribution_pct} onChange={(e) => setEditForm({ ...editForm, employee_contribution_pct: Number(e.target.value) })} /></div>
+                      <div><Label>Employer %</Label><Input type="number" step="0.01" value={editForm.employer_contribution_pct} onChange={(e) => setEditForm({ ...editForm, employer_contribution_pct: Number(e.target.value) })} /></div>
+                      <div><Label>Salary Cap</Label><Input type="number" value={editForm.applicable_salary_cap} onChange={(e) => setEditForm({ ...editForm, applicable_salary_cap: e.target.value })} placeholder="None" /></div>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button size="sm" onClick={() => saveEdit(rule.id)} disabled={updateMutation.isPending}>
+                        {updateMutation.isPending ? "Saving…" : "Save"}
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={cancelEdit}>Cancel</Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <p className="font-medium">{rule.rule_name}</p>
+                      <p className="text-sm text-slate-500">
+                        {rule.country} · Employee {(rule.employee_contribution_pct * 100).toFixed(1)}% · Employer {(rule.employer_contribution_pct * 100).toFixed(1)}%
+                        {rule.applicable_salary_cap != null && ` · Cap $${rule.applicable_salary_cap.toLocaleString()}`}
+                      </p>
+                    </div>
+                    <Button size="sm" variant="outline" onClick={() => startEdit(rule)}>Edit</Button>
+                  </div>
+                )}
               </CardContent>
             </Card>
           ))}

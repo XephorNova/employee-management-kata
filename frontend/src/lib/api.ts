@@ -88,10 +88,27 @@ export const getCountries = () => api.get("/api/meta/countries").then((r) => r.d
 // Tax rules
 export const listTaxRules = () => api.get("/api/tax-rules").then((r) => r.data);
 export const createTaxRule = (data: unknown) => api.post("/api/tax-rules", data).then((r) => r.data);
+export const addTaxBracket = (ruleId: number, data: unknown) => api.post(`/api/tax-rules/${ruleId}/brackets`, data).then((r) => r.data);
+export const deleteTaxBracket = (ruleId: number, bracketId: number) => api.delete(`/api/tax-rules/${ruleId}/brackets/${bracketId}`);
 
 // PF rules
 export const listPFRules = () => api.get("/api/pf-rules").then((r) => r.data);
 export const createPFRule = (data: unknown) => api.post("/api/pf-rules", data).then((r) => r.data);
+export const updatePFRule = (id: number, data: unknown) => api.put(`/api/pf-rules/${id}`, data).then((r) => r.data);
+
+// Bank details
+export const listBankDetails = (employeeId: number) => api.get(`/api/employees/${employeeId}/bank-details`).then((r) => r.data);
+export const createBankDetail = (employeeId: number, data: unknown) => api.post(`/api/employees/${employeeId}/bank-details`, data).then((r) => r.data);
+export const updateBankDetail = (employeeId: number, detailId: number, data: unknown) => api.put(`/api/employees/${employeeId}/bank-details/${detailId}`, data).then((r) => r.data);
+export const deleteBankDetail = (employeeId: number, detailId: number) => api.delete(`/api/employees/${employeeId}/bank-details/${detailId}`);
+
+// Bulk salary generation
+export const bulkGenerateSalarySlips = (month: number, year: number) =>
+  api.post("/api/salary-slips/bulk-generate", { period_month: month, period_year: year }).then((r) => r.data);
+
+// Tax statement
+export const getTaxStatement = (employeeId: number, year: number) =>
+  api.get(`/api/employees/${employeeId}/tax-statement/${year}`).then((r) => r.data);
 
 // Admin users
 export const listUsers = () => api.get("/api/admin/users").then((r) => r.data);

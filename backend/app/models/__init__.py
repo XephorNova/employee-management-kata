@@ -7,6 +7,7 @@ from app.models.compensation import (
 from app.models.tax import TaxRule, TaxBracket, TaxRuleType
 from app.models.pf import PFRule
 from app.models.payroll import SalarySlip
+from app.models.bank import BankDetail
 
 __all__ = [
     "User", "UserRole",
@@ -16,4 +17,5 @@ __all__ = [
     "TaxRule", "TaxBracket", "TaxRuleType",
     "PFRule",
     "SalarySlip",
+    "BankDetail",
 ]
