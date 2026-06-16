@@ -56,8 +56,8 @@ export default {
         sm: "calc(var(--radius) - 4px)",
       },
       fontFamily: {
-        sans: ["var(--font-sans)", "sans-serif"],
-        heading: ["var(--font-heading)", "sans-serif"],
+        sans: ["Roboto", "var(--font-sans)", "sans-serif"],
+        heading: ["Roboto", "var(--font-heading)", "sans-serif"],
       },
     },
   },
