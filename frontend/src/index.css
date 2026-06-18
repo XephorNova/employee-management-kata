@@ -1,9 +1,9 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
-@import "@fontsource/roboto/300.css";
-@import "@fontsource/roboto/400.css";
-@import "@fontsource/roboto/500.css";
-@import "@fontsource/roboto/700.css";
+@import "@fontsource/inter/400.css";
+@import "@fontsource/inter/500.css";
+@import "@fontsource/inter/600.css";
+@import "@fontsource/inter/700.css";
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -80,7 +80,7 @@
   }
   .theme {
     --font-heading: var(--font-sans);
-    --font-sans: 'Roboto', sans-serif;
+    --font-sans: 'Inter', sans-serif;
   }
   * {
     @apply border-border outline-ring/50;
