@@ -110,6 +110,27 @@ export const bulkGenerateSalarySlips = (month: number, year: number) =>
 export const getTaxStatement = (employeeId: number, year: number) =>
   api.get(`/api/employees/${employeeId}/tax-statement/${year}`).then((r) => r.data);
 
+export async function downloadSlipPdf(
+  employeeId: number,
+  year: number,
+  month: number,
+): Promise<void> {
+  const response = await api.get(
+    `/api/employees/${employeeId}/salary-slips/${year}/${month}/pdf`,
+    { responseType: "blob" },
+  );
+  const url = URL.createObjectURL(
+    new Blob([response.data], { type: "application/pdf" }),
+  );
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `slip_${employeeId}_${year}_${String(month).padStart(2, "0")}.pdf`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
 // Admin users
 export const listUsers = () => api.get("/api/admin/users").then((r) => r.data);
 export const createUser = (data: unknown) => api.post("/api/admin/users", data).then((r) => r.data);
