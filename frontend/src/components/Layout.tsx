@@ -71,7 +71,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         </div>
 
         {/* Nav */}
-        <nav className="flex-1 py-3">
+        <nav aria-label="Main navigation" className="flex-1 py-3">
           {visibleNav.map((item) => {
             const Icon = item.icon;
             const isActive =
@@ -87,6 +87,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 )}
                 <Link
                   to={item.href}
+                  aria-current={isActive ? "page" : undefined}
                   className={cn(
                     "flex items-center gap-2.5 px-4 py-2.5 text-sm transition-colors border-l-2",
                     isActive
@@ -116,6 +117,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             </div>
           </div>
           <button
+            type="button"
             onClick={handleLogout}
             className="mt-2 text-xs text-slate-500 hover:text-slate-300 transition-colors"
           >
