@@ -105,3 +105,40 @@ async def test_generate_salary_slip(slip_client):
     data = resp.json()
     assert data["gross_salary"] == pytest.approx(6200.0)
     assert data["net_take_home"] > 0
+
+
+@pytest.mark.asyncio
+async def test_download_slip_pdf(slip_client):
+    token = create_access_token(
+        {"sub": "hr2@acme.com", "role": "hr_manager"},
+        expires_delta=timedelta(hours=1),
+    )
+    # Generate a slip for month 3 first
+    gen = await slip_client.post(
+        "/api/employees/1/salary-slips/generate",
+        json={"period_month": 3, "period_year": 2025},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert gen.status_code == 201
+
+    # Download the PDF
+    resp = await slip_client.get(
+        "/api/employees/1/salary-slips/2025/3/pdf",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert resp.status_code == 200
+    assert resp.headers["content-type"] == "application/pdf"
+    assert resp.content[:4] == b"%PDF"
+
+
+@pytest.mark.asyncio
+async def test_download_slip_pdf_not_found(slip_client):
+    token = create_access_token(
+        {"sub": "hr2@acme.com", "role": "hr_manager"},
+        expires_delta=timedelta(hours=1),
+    )
+    resp = await slip_client.get(
+        "/api/employees/1/salary-slips/1990/1/pdf",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert resp.status_code == 404

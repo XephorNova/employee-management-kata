@@ -1,4 +1,6 @@
+from io import BytesIO
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from pydantic import BaseModel
@@ -66,6 +68,44 @@ async def get_slip(
     if not slip:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Salary slip not found")
     return slip
+
+
+@router.get("/{year}/{month}/pdf")
+async def download_slip_pdf(
+    employee_id: int,
+    year: int,
+    month: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    from app.models.employee import Employee
+    from app.services.pdf_service import generate_salary_slip_pdf
+
+    if current_user.role == UserRole.employee and current_user.employee_id != employee_id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
+
+    r = await db.execute(
+        select(SalarySlip).where(
+            SalarySlip.employee_id == employee_id,
+            SalarySlip.period_year == year,
+            SalarySlip.period_month == month,
+        )
+    )
+    slip = r.scalar_one_or_none()
+    if not slip:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Salary slip not found")
+
+    employee = await db.get(Employee, employee_id)
+    if not employee:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Employee not found")
+
+    pdf_bytes = generate_salary_slip_pdf(slip, employee)
+    filename = f"slip_{employee_id}_{year}_{month:02d}.pdf"
+    return StreamingResponse(
+        BytesIO(pdf_bytes),
+        media_type="application/pdf",
+        headers={"Content-Disposition": f"attachment; filename={filename}"},
+    )
 
 
 @salary_admin_router.post("/bulk-generate", status_code=202)
