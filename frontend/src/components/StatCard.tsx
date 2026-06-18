@@ -1,9 +1,10 @@
+import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
 interface StatCardProps {
   label: string;
   value: string | number;
-  icon: React.ReactNode;
+  icon: ReactNode;
   iconBg: string;        // Tailwind bg class, e.g. "bg-amber-100"
   change?: string;       // e.g. "↑ 12% this month"
   changeUp?: boolean;    // true → green text, false/undefined → slate
