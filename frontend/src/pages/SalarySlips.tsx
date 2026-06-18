@@ -333,6 +333,8 @@ export default function SalarySlips() {
     setDownloadingId(s.id);
     try {
       await downloadSlipPdf(user!.employee_id!, s.period_year, s.period_month);
+    } catch {
+      alert("Failed to download salary slip. Please try again.");
     } finally {
       setDownloadingId(null);
     }

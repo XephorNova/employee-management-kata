@@ -336,6 +336,8 @@ export default function EmployeeDetail() {
     setDownloadingId(s.id);
     try {
       await downloadSlipPdf(empId, s.period_year, s.period_month);
+    } catch {
+      alert("Failed to download salary slip. Please try again.");
     } finally {
       setDownloadingId(null);
     }

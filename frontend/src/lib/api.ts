@@ -128,7 +128,8 @@ export async function downloadSlipPdf(
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
-  URL.revokeObjectURL(url);
+  // Delay revocation so the browser has time to start reading the blob URL.
+  setTimeout(() => URL.revokeObjectURL(url), 100);
 }
 
 // Admin users
