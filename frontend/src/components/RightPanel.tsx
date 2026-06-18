@@ -86,8 +86,9 @@ export default function RightPanel({ employeeCount }: RightPanelProps) {
               <div className="flex flex-col gap-4 pt-2">
                 <div className="flex gap-3 items-end">
                   <div className="flex flex-col gap-1.5">
-                    <Label>Month</Label>
+                    <Label htmlFor="slip-month">Month</Label>
                     <Input
+                      id="slip-month"
                       type="number"
                       min={1}
                       max={12}
@@ -97,8 +98,9 @@ export default function RightPanel({ employeeCount }: RightPanelProps) {
                     />
                   </div>
                   <div className="flex flex-col gap-1.5">
-                    <Label>Year</Label>
+                    <Label htmlFor="slip-year">Year</Label>
                     <Input
+                      id="slip-year"
                       type="number"
                       value={year}
                       onChange={(e) => setYear(Number(e.target.value))}
