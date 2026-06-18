@@ -1,3 +1,4 @@
+import asyncio
 from io import BytesIO
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import StreamingResponse
@@ -7,9 +8,11 @@ from pydantic import BaseModel
 from app.core.database import get_db
 from app.auth.dependencies import hr_or_above, get_current_user, any_authenticated, admin_only
 from app.models.user import User, UserRole
+from app.models.employee import Employee
 from app.models.payroll import SalarySlip
 from app.schemas.payroll import SalarySlipGenerateRequest, SalarySlipOut
 from app.services.payroll_service import generate_salary_slip
+from app.services.pdf_service import generate_salary_slip_pdf
 
 router = APIRouter(prefix="/api/employees/{employee_id}/salary-slips", tags=["salary-slips"])
 
@@ -78,9 +81,6 @@ async def download_slip_pdf(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    from app.models.employee import Employee
-    from app.services.pdf_service import generate_salary_slip_pdf
-
     if current_user.role == UserRole.employee and current_user.employee_id != employee_id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
 
@@ -99,12 +99,15 @@ async def download_slip_pdf(
     if not employee:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Employee not found")
 
-    pdf_bytes = generate_salary_slip_pdf(slip, employee)
+    pdf_bytes = await asyncio.to_thread(generate_salary_slip_pdf, slip, employee)
     filename = f"slip_{employee_id}_{year}_{month:02d}.pdf"
     return StreamingResponse(
         BytesIO(pdf_bytes),
         media_type="application/pdf",
-        headers={"Content-Disposition": f"attachment; filename={filename}"},
+        headers={
+            "Content-Disposition": f'attachment; filename="{filename}"',
+            "Content-Length": str(len(pdf_bytes)),
+        },
     )
 
 
