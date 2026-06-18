@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/context/AuthContext";
 import {
-  listSalarySlips, listBankDetails, createBankDetail, updateBankDetail, deleteBankDetail, getTaxStatement,
+  listSalarySlips, listBankDetails, createBankDetail, updateBankDetail, deleteBankDetail, getTaxStatement, downloadSlipPdf,
 } from "@/lib/api";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -327,6 +327,17 @@ export default function SalarySlips() {
     enabled: !!user?.employee_id,
   });
 
+  const [downloadingId, setDownloadingId] = useState<number | null>(null);
+
+  async function handleDownload(s: { id: number; period_year: number; period_month: number }) {
+    setDownloadingId(s.id);
+    try {
+      await downloadSlipPdf(user!.employee_id!, s.period_year, s.period_month);
+    } finally {
+      setDownloadingId(null);
+    }
+  }
+
   if (!user?.employee_id) {
     return <div className="text-slate-400 p-4">No employee record linked to your account.</div>;
   }
@@ -348,6 +359,7 @@ export default function SalarySlips() {
                     <TableHead>PF</TableHead>
                     <TableHead>Tax</TableHead>
                     <TableHead>Net Take-Home</TableHead>
+                    <TableHead></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -358,6 +370,16 @@ export default function SalarySlips() {
                       <TableCell>{fmt(s.pf_employee_contribution, s.currency)}</TableCell>
                       <TableCell>{fmt(s.tax_deducted, s.currency)}</TableCell>
                       <TableCell className="font-bold">{fmt(s.net_take_home, s.currency)}</TableCell>
+                      <TableCell>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          disabled={downloadingId === s.id}
+                          onClick={() => handleDownload(s)}
+                        >
+                          {downloadingId === s.id ? "…" : "Download PDF"}
+                        </Button>
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
