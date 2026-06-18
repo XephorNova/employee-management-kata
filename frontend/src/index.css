@@ -80,7 +80,7 @@
   }
   .theme {
     --font-heading: var(--font-sans);
-    --font-sans: 'Inter', sans-serif;
+    --font-sans: 'Inter', ui-sans-serif, sans-serif;
   }
   * {
     @apply border-border outline-ring/50;
