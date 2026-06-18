@@ -8,6 +8,10 @@ class Settings(BaseSettings):
     access_token_expire_minutes: int = 30
     refresh_token_expire_days: int = 7
     anthropic_api_key: str = ""
+    redis_url: str = "redis://localhost:6379"
+    langfuse_public_key: str = ""
+    langfuse_secret_key: str = ""
+    langfuse_host: str = "https://cloud.langfuse.com"
 
     class Config:
         env_file = ".env"

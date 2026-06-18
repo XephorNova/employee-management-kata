@@ -16,3 +16,8 @@ pytest-asyncio==0.24.0
 anyio==4.6.0
 faker==30.0.0
 fpdf2==2.8.3
+redis[asyncio]==5.0.8
+chromadb==0.5.23
+langfuse==2.57.6
+sentence-transformers==3.3.1
+fakeredis==2.26.2
