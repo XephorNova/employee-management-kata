@@ -12,18 +12,19 @@ _MONTHS = [
 def generate_salary_slip_pdf(slip: SalarySlip, employee: Employee) -> bytes:
     pdf = FPDF()
     pdf.set_margins(15, 15, 15)
+    # Compression disabled so PDF stream bytes are human-readable and testable with raw byte assertions.
     pdf.set_compression(False)
     pdf.add_page()
 
     # ── Header ────────────────────────────────────────────────────────────
     pdf.set_font("Helvetica", "B", 14)
     pdf.cell(0, 8, "ACME HR", new_x="LMARGIN", new_y="NEXT")
-    generated_on = datetime.now(timezone.utc).strftime("%d %b %Y")
+    generated_on = (slip.generated_at or datetime.now(timezone.utc)).strftime("%d %b %Y")
     pdf.set_font("Helvetica", "", 9)
     pdf.set_y(pdf.get_y() - 8)
     pdf.cell(0, 8, generated_on, align="R", new_x="LMARGIN", new_y="NEXT")
     pdf.set_draw_color(160, 160, 160)
-    pdf.line(15, pdf.get_y(), 195, pdf.get_y())
+    pdf.line(pdf.l_margin, pdf.get_y(), pdf.l_margin + pdf.epw, pdf.get_y())
     pdf.ln(3)
 
     # ── Title ─────────────────────────────────────────────────────────────
@@ -41,7 +42,8 @@ def generate_salary_slip_pdf(slip: SalarySlip, employee: Employee) -> bytes:
     pdf.cell(half, 6, f"Department : {employee.department}")
     pdf.cell(half, 6, f"Country : {employee.country}", new_x="LMARGIN", new_y="NEXT")
     pdf.cell(half, 6, f"Currency : {slip.currency}")
-    pdf.cell(half, 6, f"Job Title : {employee.job_title[:40]}", new_x="LMARGIN", new_y="NEXT")
+    title = employee.job_title if len(employee.job_title) <= 40 else employee.job_title[:39] + "..."
+    pdf.cell(half, 6, f"Job Title : {title}", new_x="LMARGIN", new_y="NEXT")
     pdf.ln(5)
 
     # ── Table helpers ─────────────────────────────────────────────────────
@@ -82,7 +84,7 @@ def generate_salary_slip_pdf(slip: SalarySlip, employee: Employee) -> bytes:
 
     # ── Footer ────────────────────────────────────────────────────────────
     pdf.set_draw_color(160, 160, 160)
-    pdf.line(15, pdf.get_y(), 195, pdf.get_y())
+    pdf.line(pdf.l_margin, pdf.get_y(), pdf.l_margin + pdf.epw, pdf.get_y())
     pdf.ln(2)
     pdf.set_font("Helvetica", "", 8)
     ts = slip.generated_at.strftime("%d %b %Y %H:%M UTC") if slip.generated_at else "-"
