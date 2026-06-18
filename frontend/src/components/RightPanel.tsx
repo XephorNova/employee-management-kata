@@ -73,11 +73,11 @@ export default function RightPanel({ employeeCount }: RightPanelProps) {
 
         {user?.role === "admin" && (
           <Dialog open={dialogOpen} onOpenChange={handleDialogChange}>
-            <DialogTrigger asChild>
-              <Button size="sm" className="w-full justify-start gap-2 text-xs h-8">
-                <FileText className="w-3.5 h-3.5" />
-                Generate Slips
-              </Button>
+            <DialogTrigger
+              render={<Button size="sm" className="w-full justify-start gap-2 text-xs h-8" />}
+            >
+              <FileText className="w-3.5 h-3.5" />
+              Generate Slips
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
