@@ -8,25 +8,32 @@ Add per-user daily token limits, persistent conversation memory, and LLM observa
 
 ## Architecture
 
-Three new service modules sit between the FastAPI endpoint and the Anthropic API:
+Four new service modules sit between the FastAPI endpoint and the Anthropic API:
 
 ```
 POST /api/ai/query
         │
         ▼
-[1] token_limiter.py   — Redis: check daily budget (300k tokens/day)
+[1] token_limiter.py      — Redis: check daily budget (300k tokens/day)
         │
         ▼
-[2] conversation_store.py — Chroma: load recent + semantically similar past exchanges
-        │
-        ▼
-[3] ai_service.py (modified) — call Claude with enriched context, wrapped by Langfuse trace
-        │
-        ▼
-[4] Post-call: persist exchange to Chroma, INCRBY Redis counter
-        │
-        ▼
-     Response: answer + token_usage fields
+[2] query_cache.py        — Chroma: semantic cache lookup (global, shared across users)
+    Cache hit? ──────────────────────────────────────────────────────┐
+        │ miss                                                        │
+        ▼                                                             │
+[3] conversation_store.py — Chroma: load recent + semantically       │
+                            similar past exchanges per user           │
+        │                                                             │
+        ▼                                                             │
+[4] ai_service.py (modified) — call Claude with enriched context,    │
+                               wrapped by Langfuse trace             │
+        │                                                             │
+        ▼                                                             │
+[5] Post-call: store in query_cache, persist exchange to             │
+               conversation_store, INCRBY Redis counter              │
+        │                                                             ▼
+     Response: answer + token_usage fields          Response: answer + from_cache=true
+                                                    (tokens_used=0, no Redis increment)
 ```
 
 ---
@@ -34,7 +41,7 @@ POST /api/ai/query
 ## Tech Stack
 
 - **Redis** (`redis-py` with asyncio) — atomic per-user daily token counters
-- **Chroma** (`chromadb`, embedded mode) — local vector store for conversation history; default `all-MiniLM-L6-v2` embeddings via `sentence-transformers`
+- **Chroma** (`chromadb`, embedded mode) — local vector store for conversation history AND global semantic query cache; default `all-MiniLM-L6-v2` embeddings via `sentence-transformers`
 - **Langfuse** (`langfuse` Python SDK, cloud free tier) — LLM observability, one trace per query
 - **FastAPI** (existing) — extended AI endpoints
 - **React / TanStack Query** (existing) — token gauge UI
@@ -53,6 +60,30 @@ POST /api/ai/query
 ---
 
 ## Services
+
+### `backend/app/services/query_cache.py`
+
+Global semantic cache shared across all users. Prevents redundant LLM calls for similar questions.
+
+**Chroma collection:** `global_query_cache` (single collection, not per-user)
+**Similarity threshold:** Chroma cosine distance `< 0.08` (equivalent to ~>0.92 cosine similarity) — very high bar to avoid returning subtly different answers
+**Cache TTL:** 24 hours — HR data changes (new hires, salary updates), so answers older than 24h are skipped even if semantically similar
+**Document format:** the question text as the Chroma document; metadata stores `answer`, `tool_used`, `chart_type`, `data` (JSON string), `cached_at` (Unix timestamp)
+
+```python
+async def get_cached_response(question: str) -> dict | None:
+    # Semantic search in global_query_cache with k=1
+    # Returns cached result dict if distance < 0.08 AND cached_at within 24h
+    # Returns None on miss
+
+async def set_cached_response(question: str, result: dict) -> None:
+    # Stores result in global_query_cache
+    # result keys: answer, tool_used, chart_type, data
+```
+
+Cache hits short-circuit the entire LLM + tool pipeline. No Redis token increment on a cache hit (`tokens_used=0`, `tokens_remaining` unchanged).
+
+---
 
 ### `backend/app/services/token_limiter.py`
 
@@ -167,13 +198,15 @@ A: <past answer>
 **Endpoint logic:**
 1. Extract `current_user` (already injected, `analyst_or_above` dependency)
 2. `await check_limit(current_user.id)` → 429 if over limit
-3. `recent = await get_recent(current_user.id, n=5)`
-4. `similar = await search_similar(current_user.id, question, k=3)`
-5. Deduplicate by timestamp, build `context_messages`
-6. `result = await tracked_ai_query(db, question, current_user.id, context_messages)`
-7. `await consume(current_user.id, result["tokens_used"])`
-8. `await add_exchange(current_user.id, question, result["answer"])`
-9. Fetch updated usage → append to response
+3. `cached = await get_cached_response(question)` → if hit, return immediately with `from_cache=True`, `tokens_used=0`
+4. `recent = await get_recent(current_user.id, n=5)`
+5. `similar = await search_similar(current_user.id, question, k=3)`
+6. Deduplicate by timestamp, build `context_messages`
+7. `result = await tracked_ai_query(db, question, current_user.id, context_messages)`
+8. `await set_cached_response(question, result)`
+9. `await consume(current_user.id, result["tokens_used"])`
+10. `await add_exchange(current_user.id, question, result["answer"])`
+11. Fetch updated usage → append to response
 
 ### `GET /api/ai/usage` (new)
 
@@ -202,6 +235,7 @@ class AIQueryResponse(BaseModel):
     tokens_used: int = 0
     tokens_remaining: int = 300_000
     resets_at: str = ""
+    from_cache: bool = False
 
 class AIUsageResponse(BaseModel):
     tokens_used: int
@@ -246,16 +280,20 @@ export const getAIUsage = () =>
 ## Testing
 
 **`backend/tests/test_token_limiter.py`**
-- Uses a real Redis connection (local) or `fakeredis` for unit tests
+- Uses `fakeredis` for unit tests (no real Redis dependency)
 - Tests: under limit returns True, at limit returns False, consume increments correctly, TTL is set
 
 **`backend/tests/test_conversation_store.py`**
 - Uses a temp Chroma directory (cleaned up after each test)
 - Tests: add exchange stores document, get_recent returns sorted by timestamp, search_similar returns relevant results
 
+**`backend/tests/test_query_cache.py`**
+- Uses a temp Chroma directory (cleaned up after each test)
+- Tests: cache miss returns None, cache hit returns result when distance < threshold, stale entry (>24h) returns None, fresh entry within 24h is returned
+
 **`backend/tests/test_ai.py`** (extends existing)
 - Mocked Redis and Chroma
-- Tests: 429 returned when over limit, usage fields present in 200 response, `GET /api/ai/usage` returns correct shape
+- Tests: 429 returned when over limit, usage fields present in 200 response, `GET /api/ai/usage` returns correct shape, cache hit returns `from_cache=True` and `tokens_used=0`
 
 ---
 
@@ -264,8 +302,10 @@ export const getAIUsage = () =>
 | Failure | Behavior |
 |---|---|
 | Redis unreachable | 503 — do not fail open |
-| Chroma error on load | Log warning, proceed with empty context (conversation memory is best-effort) |
-| Chroma error on save | Log warning, do not fail the query response |
+| Chroma cache error on read | Log warning, proceed as cache miss (best-effort) |
+| Chroma cache error on write | Log warning, do not fail the query response |
+| Chroma conversation error on load | Log warning, proceed with empty context (best-effort) |
+| Chroma conversation error on save | Log warning, do not fail the query response |
 | Langfuse unreachable | Log warning, proceed without tracing |
 | Anthropic API error | Existing behavior (propagate error) |
 
