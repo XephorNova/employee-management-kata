@@ -3,7 +3,7 @@ import { useParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   getEmployee, listSalaryRecords, listBonuses, listAllowances, generateSalarySlip, listSalarySlips,
-  listBankDetails, createBankDetail, updateBankDetail, deleteBankDetail, getTaxStatement,
+  listBankDetails, createBankDetail, updateBankDetail, deleteBankDetail, getTaxStatement, downloadSlipPdf,
 } from "@/lib/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -330,6 +330,17 @@ export default function EmployeeDetail() {
   const { data: allowances } = useQuery({ queryKey: ["allowances", empId], queryFn: () => listAllowances(empId) });
   const { data: slips } = useQuery({ queryKey: ["salary-slips", empId], queryFn: () => listSalarySlips(empId) });
 
+  const [downloadingId, setDownloadingId] = useState<number | null>(null);
+
+  async function handleDownload(s: { id: number; period_year: number; period_month: number }) {
+    setDownloadingId(s.id);
+    try {
+      await downloadSlipPdf(empId, s.period_year, s.period_month);
+    } finally {
+      setDownloadingId(null);
+    }
+  }
+
   const now = new Date();
   const [genMonth] = useState(now.getMonth() + 1);
   const [genYear] = useState(now.getFullYear());
@@ -416,7 +427,15 @@ export default function EmployeeDetail() {
         <CardContent>
           {slips && slips.length > 0 ? (
             <Table>
-              <TableHeader><TableRow><TableHead>Period</TableHead><TableHead>Gross</TableHead><TableHead>Tax</TableHead><TableHead>Net</TableHead></TableRow></TableHeader>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Period</TableHead>
+                  <TableHead>Gross</TableHead>
+                  <TableHead>Tax</TableHead>
+                  <TableHead>Net</TableHead>
+                  <TableHead></TableHead>
+                </TableRow>
+              </TableHeader>
               <TableBody>
                 {slips.map((s: { id: number; period_month: number; period_year: number; gross_salary: number; tax_deducted: number; net_take_home: number; currency: string }) => (
                   <TableRow key={s.id}>
@@ -424,6 +443,16 @@ export default function EmployeeDetail() {
                     <TableCell>{fmt(s.gross_salary, s.currency)}</TableCell>
                     <TableCell>{fmt(s.tax_deducted, s.currency)}</TableCell>
                     <TableCell className="font-medium">{fmt(s.net_take_home, s.currency)}</TableCell>
+                    <TableCell>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        disabled={downloadingId === s.id}
+                        onClick={() => handleDownload(s)}
+                      >
+                        {downloadingId === s.id ? "…" : "Download PDF"}
+                      </Button>
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
