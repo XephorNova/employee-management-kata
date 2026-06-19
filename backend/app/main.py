@@ -12,6 +12,7 @@ from app.api.ai import router as ai_router
 from app.api.meta import router as meta_router
 from app.api.admin import router as admin_router
 from app.api.bank import router as bank_router
+from app.api.calculator import router as calculator_router
 from app.core.database import engine, Base
 import app.models  # noqa — ensures all models registered
 
@@ -35,7 +36,8 @@ app.add_middleware(
 
 for router in [auth_router, employees_router, compensation_router, tax_rules_router,
                pf_rules_router, salary_slips_router, salary_admin_router, tax_statement_router,
-               analytics_router, ai_router, meta_router, admin_router, bank_router]:
+               analytics_router, ai_router, meta_router, admin_router, bank_router,
+               calculator_router]:
     app.include_router(router)
 
 
