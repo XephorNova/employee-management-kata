@@ -81,6 +81,17 @@ export const getSalaryBands = (bucketSize = 5000) =>
 export const aiQuery = (question: string) =>
   api.post("/api/ai/query", { question }).then((r) => r.data);
 
+// AI usage
+export interface AIUsage {
+  tokens_used: number;
+  tokens_limit: number;
+  tokens_remaining: number;
+  resets_at: string;
+}
+
+export const getAIUsage = (): Promise<AIUsage> =>
+  api.get("/api/ai/usage").then((r) => r.data);
+
 // Meta
 export const getDepartments = () => api.get("/api/meta/departments").then((r) => r.data);
 export const getCountries = () => api.get("/api/meta/countries").then((r) => r.data);
