@@ -10,12 +10,14 @@ import {
   UserCog,
   Receipt,
   Layers,
+  Calculator,
 } from "lucide-react";
 
 const navItems = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard, roles: ["admin", "hr_manager", "hr_analyst"] },
   { href: "/employees", label: "Employees", icon: Users, roles: ["admin", "hr_manager", "hr_analyst"] },
   { href: "/insights", label: "AI Insights", icon: MessageSquare, roles: ["admin", "hr_manager", "hr_analyst"] },
+  { href: "/calculator", label: "Calculator", icon: Calculator, roles: ["admin", "hr_manager", "hr_analyst", "employee"] },
   { href: "/admin/tax-rules", label: "Tax Rules", icon: FileText, roles: ["admin", "hr_manager"], section: "Admin" },
   { href: "/admin/pf-rules", label: "PF Rules", icon: Briefcase, roles: ["admin", "hr_manager"] },
   { href: "/admin/users", label: "Users", icon: UserCog, roles: ["admin"] },
@@ -30,6 +32,7 @@ const routeTitles: Record<string, string> = {
   "/admin/pf-rules": "PF Rules",
   "/admin/users": "Users",
   "/my/salary-slips": "My Salary Slips",
+  "/calculator": "Net Salary Calculator",
 };
 
 function getPageTitle(pathname: string): string {

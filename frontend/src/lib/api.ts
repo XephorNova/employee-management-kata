@@ -148,4 +148,31 @@ export const listUsers = () => api.get("/api/admin/users").then((r) => r.data);
 export const createUser = (data: unknown) => api.post("/api/admin/users", data).then((r) => r.data);
 export const updateUser = (id: number, data: unknown) => api.put(`/api/admin/users/${id}`, data).then((r) => r.data);
 
+// Calculator
+export interface CalculatorRequest {
+  country: string;
+  base_salary: number;
+  pay_frequency: "monthly" | "annual";
+  allowances: number;
+  other_deductions: number;
+  currency: string;
+}
+
+export interface CalculatorResponse {
+  gross_salary: number;
+  pf_employee_contribution: number;
+  pf_employer_contribution: number;
+  tax_deducted: number;
+  taxable_income: number;
+  other_deductions: number;
+  net_take_home: number;
+  currency: string;
+  tax_rule_applied: string | null;
+  pf_rule_applied: string | null;
+  no_rules_warning: boolean;
+}
+
+export const calculateNetSalary = (data: CalculatorRequest): Promise<CalculatorResponse> =>
+  api.post("/api/calculator/calculate", data).then((r) => r.data);
+
 export default api;

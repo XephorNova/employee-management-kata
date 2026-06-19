@@ -12,6 +12,7 @@ const SalarySlips = lazy(() => import("@/pages/SalarySlips"));
 const TaxRules = lazy(() => import("@/pages/admin/TaxRules"));
 const PFRules = lazy(() => import("@/pages/admin/PFRules"));
 const Users = lazy(() => import("@/pages/admin/Users"));
+const Calculator = lazy(() => import("@/pages/Calculator"));
 
 export default function Router() {
   return (
@@ -29,6 +30,7 @@ export default function Router() {
                     <Route path="/employees" element={<Employees />} />
                     <Route path="/employees/:id" element={<EmployeeDetail />} />
                     <Route path="/insights" element={<Insights />} />
+                    <Route path="/calculator" element={<Calculator />} />
                     <Route path="/my/salary-slips" element={<SalarySlips />} />
                     <Route path="/admin/tax-rules" element={<TaxRules />} />
                     <Route path="/admin/pf-rules" element={<PFRules />} />
