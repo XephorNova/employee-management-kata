@@ -66,7 +66,7 @@ export default function Users() {
                 <TableCell><Badge variant="outline" className="capitalize">{u.role.replace("_", " ")}</Badge></TableCell>
                 <TableCell><Badge variant={u.is_active ? "default" : "secondary"}>{u.is_active ? "Active" : "Inactive"}</Badge></TableCell>
                 <TableCell>
-                  <Button variant="ghost" size="sm" onClick={() => toggleMutation.mutate({ id: u.id, is_active: !u.is_active })}>
+                  <Button variant="outline" size="sm" onClick={() => toggleMutation.mutate({ id: u.id, is_active: !u.is_active })}>
                     {u.is_active ? "Deactivate" : "Activate"}
                   </Button>
                 </TableCell>

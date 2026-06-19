@@ -133,7 +133,7 @@ export default function PFRules() {
                         {rule.applicable_salary_cap != null && ` · Cap $${rule.applicable_salary_cap.toLocaleString()}`}
                       </p>
                     </div>
-                    <Button size="sm" variant="outline" onClick={() => startEdit(rule)}>Edit</Button>
+                    <Button size="sm" onClick={() => startEdit(rule)}>Edit</Button>
                   </div>
                 )}
               </CardContent>

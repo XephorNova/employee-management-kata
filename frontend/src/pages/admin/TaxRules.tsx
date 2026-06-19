@@ -36,7 +36,7 @@ function BracketRow({ bracket, onDelete }: { bracket: Bracket; onDelete: () => v
       <TableCell>{(bracket.rate_pct * 100).toFixed(1)}%</TableCell>
       <TableCell>{bracket.currency}</TableCell>
       <TableCell>
-        <Button variant="ghost" size="sm" className="text-red-500 hover:text-red-700 h-7 px-2" onClick={onDelete}>
+        <Button variant="destructive" size="sm" className="h-7 px-2" onClick={onDelete}>
           ✕
         </Button>
       </TableCell>
@@ -148,7 +148,7 @@ function RuleCard({ rule }: { rule: TaxRule }) {
                 </div>
               </div>
             ) : (
-              <Button size="sm" variant="outline" onClick={() => setShowAdd(true)}>+ Add bracket</Button>
+              <Button size="sm" onClick={() => setShowAdd(true)}>+ Add bracket</Button>
             )}
           </div>
         )}

@@ -103,7 +103,7 @@ function BankDetailsCard({ empId }: { empId: number }) {
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle className="text-base">My Bank Accounts</CardTitle>
-        <Button size="sm" variant="outline" onClick={() => setShowAdd((v) => !v)}>+ Add bank account</Button>
+        <Button size="sm" onClick={() => setShowAdd((v) => !v)}>+ Add bank account</Button>
       </CardHeader>
       <CardContent className="space-y-4">
         {showAdd && (
@@ -168,8 +168,8 @@ function BankDetailsCard({ empId }: { empId: number }) {
                     <TableCell>{detail.is_primary ? <Badge>Primary</Badge> : null}</TableCell>
                     <TableCell>
                       <div className="flex gap-1">
-                        <Button size="sm" variant="outline" onClick={() => startEdit(detail)}>Edit</Button>
-                        <Button size="sm" variant="outline" className="text-red-600" onClick={() => deleteMutation.mutate(detail.id)} disabled={deleteMutation.isPending}>Delete</Button>
+                        <Button size="sm" onClick={() => startEdit(detail)}>Edit</Button>
+                        <Button size="sm" variant="destructive" onClick={() => deleteMutation.mutate(detail.id)} disabled={deleteMutation.isPending}>Delete</Button>
                       </div>
                     </TableCell>
                   </TableRow>
@@ -375,7 +375,6 @@ export default function SalarySlips() {
                       <TableCell>
                         <Button
                           size="sm"
-                          variant="outline"
                           disabled={downloadingId === s.id}
                           onClick={() => handleDownload(s)}
                         >
